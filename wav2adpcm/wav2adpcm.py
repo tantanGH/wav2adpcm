@@ -123,8 +123,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("infile",help="input WAVE file")
     parser.add_argument("outfile",help="output ADPCM file")
-    parser.add_argument("-f","--filter",help="apply low-pass filter (1:yes(default),0:no)",type=int,default=1,choices=[0,1])
-    parser.add_argument("-v","--volume",help="adjust volume in dB [-20 to 20]",type=int,default=0)
+    parser.add_argument("-f","--filter",help="1:apply low-pass filter (default:1)",type=int,default=1,choices=[0,1])
+    parser.add_argument("-v","--volume",help="adjust volume in dB (default:0)",type=int,default=0)
 
     args = parser.parse_args()
 
