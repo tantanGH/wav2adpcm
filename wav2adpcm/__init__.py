@@ -1,1 +1,1 @@
-from wav2adpcm.wav2adpcm import *
+from test.wav2adpcm import *
