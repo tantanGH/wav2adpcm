@@ -124,7 +124,7 @@ def main():
     parser.add_argument("infile",help="input WAVE file")
     parser.add_argument("outfile",help="output ADPCM file")
     parser.add_argument("-f","--filter",help="apply low-pass filter",type=int,default=1,choices=[0,1])
-    parser.add_argument("-v","--volume",help="adjust volume",type=int,default=0,choices=range(-20:20))
+    parser.add_argument("-v","--volume",help="adjust volume",type=int,default=0,choices=range(-20,20))
 
     args = parser.parse_args()
 
