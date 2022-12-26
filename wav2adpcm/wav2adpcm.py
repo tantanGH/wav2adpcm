@@ -82,7 +82,7 @@ def encode_adpcm(current_data, last_estimate, step_index):
 def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag, volume_adjust ):
 
     # Open the audio file
-    audio = AudioSegment.from_file( wave_file, format='wav' )
+    audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
 
     # Adjust the volume (default zer0 adust)
     adjusted_audio = audio + volume_adjust
