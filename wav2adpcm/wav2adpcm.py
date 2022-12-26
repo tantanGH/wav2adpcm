@@ -105,8 +105,10 @@ def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag, volume_adjust ):
 
     for i,x in enumerate( signed_16bit_samples ):
 
-        ( code, estimate, adjusted_index ) = encode_adpcm( x//16, last_estimate, step_index )
+        # signed 16bit to 12bit, then encode to ADPCM
+        ( code, estimate, adjusted_index ) = encode_adpcm( x//16, last_estimate, step_index ) 
 
+        # fill a byte in this order: lower 4 bit -> upper 4 bit
         if ( i % 2 == 0 ):
             adpcm_data.append( code )
         else:
