@@ -25,5 +25,5 @@ setuptools.setup(
     },
     packages=setuptools.find_packages(),
     python_requires=">=3.5",
-    setup_requires=["soundfile"],
+    setup_requires=["pydub","ffmpeg"],
 )

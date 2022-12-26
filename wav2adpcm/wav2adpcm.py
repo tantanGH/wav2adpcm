@@ -1,5 +1,5 @@
 #
-#  wav2adpcm.py - wave file to X680x0 ADPCM data converter in Python (using soundfile library)
+#  wav2adpcm_pydub.py - wave file to X680x0 ADPCM data converter in Python (using pydub library)
 #  https://github.com/tantanGH/wav2adpcm/
 #
 #  implemented based on the below Dialogic ADPCM format specifications:
@@ -7,10 +7,8 @@
 #
 
 import argparse
-import soundfile as sf
-import numpy as np
 
-from scipy.signal import butter, lfilter
+from pydub import AudioSegment
 
 step_adjust = [ -1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8 ]
 
@@ -81,38 +79,31 @@ def encode_adpcm(current_data, last_estimate, step_index):
 
     return (code,estimate,adjusted_index)
 
-def lowpass_filter(data, cutoff, fs, order):
-    b, a = butter(order, cutoff / (0.5 * fs), btype='lowpass')
-    y = lfilter(b, a, data)
-    return y
+def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag, volume_adjust ):
 
-def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag, volume_db ):
+    # Open the audio file
+    audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
 
-    # open the input WAVE file
-    original_data, sample_rate = sf.read( wave_file )
+    # Adjust the volume (default zero adust)
+    adjusted_audio = audio + volume_adjust
 
-    # apply the low-pass filter at 18kHz to the original data
-    filtered_data = lowpass_filter( original_data, cutoff=18000, fs=sample_rate, order=5 ) if ( filter_flag != 0 ) else original_data
+    # Apply a low-pass filter at 18kHz (option, but default)
+    filtered_audio = adjusted_audio.low_pass_filter( 18000 ) if filter_flag != 0 else adjusted_audio
 
-    # convert the stereo data to mono by averaging the left and right channels
-    mono_data = np.mean( original_data, axis=1 )
+    # to mono
+    mono_audio = filtered_audio.set_channels( 1 )
 
-    # convert the desired volume in dB to a scaling factor
-    scaling_factor = 10 ** ( volume_db / 20 )
+    # to 15.6kHz
+    rated_audio = mono_audio.set_frame_rate( 15625 )
 
-    # adjust the volume of the audio data by multiplying by the scaling factor
-    adjusted_data = mono_data * scaling_factor
-
-    # resampling to 15625Hz
-    resampled_data = sf.resample( adjusted_data, sample_rate, 15625 )
-
-    print(resampled_data[0:100])
+    # source data samples (still 16bit)
+    signed_16bit_samples = rated_audio.get_array_of_samples()
 
     last_estimate = 0
     step_index = 0
     adpcm_data = []
 
-    for i,x in enumerate( resampled_data ):
+    for i,x in enumerate( signed_16bit_samples ):
 
         ( code, estimate, adjusted_index ) = encode_adpcm( x//16, last_estimate, step_index )
 
