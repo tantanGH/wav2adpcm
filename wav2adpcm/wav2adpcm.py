@@ -36,23 +36,23 @@ def decode_adpcm(code,step_index,last_data):
     
     estimate = last_data + delta
 
-    if (estimate > 2047):
+    if ( estimate > 2047 ):
         estimate = 2047
 
-    if (estimate < -2048):
+    if ( estimate < -2048 ):
         estimate = -2048
 
     step_index += step_adjust[ code ]
 
-    if (step_index < 0):
+    if ( step_index < 0 ):
         step_index = 0
 
-    if (step_index > 48):
+    if ( step_index > 48 ):
         step_index = 48
 
-    return (estimate,step_index)
+    return ( estimate, step_index )
 
-def encode_adpcm(current_data, last_estimate, step_index):
+def encode_adpcm( current_data, last_estimate, step_index ):
 
     ss = step_size[ step_index ]
 
@@ -75,11 +75,11 @@ def encode_adpcm(current_data, last_estimate, step_index):
         code += 0x01        # bit0 = 1
     
     # need to use decoder to estimate
-    (estimate,adjusted_index) = decode_adpcm(code,step_index,last_estimate)
+    ( estimate, adjusted_index ) = decode_adpcm( code, step_index, last_estimate )
 
-    return (code,estimate,adjusted_index)
+    return ( code,estimate, adjusted_index )
 
-def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag, volume_adjust ):
+def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0 ):
 
     # Open the audio file
     audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
@@ -131,4 +131,4 @@ def main():
     args = parser.parse_args()
 
     # execute conversion in script mode
-    convert_wave_to_adpcm(args.infile,args.outfile,args.filter,args.volume)
+    convert_wave_to_adpcm( args.infile, args.outfile, args.filter, args.volume )
