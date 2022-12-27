@@ -22,3 +22,7 @@ To suppress warnings messages in case you don't have ffmpeg, you just ignore it 
     #!/Library/Developer/CommandLineTools/usr/bin/python3 -W ignore
 
 This is macOS case. Change install path to your environment accordingly.
+
+### 導入ガイド
+
+[詳細な日本語での導入ガイド](https://github.com/tantanGH/distribution/blob/main/windows_python_for_x68k.md)
