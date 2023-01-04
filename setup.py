@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="wav2adpcm",
-    version="0.0.3",
+    version="0.0.4",
     author="tantanGH",
     author_email="tantanGH@github",
     license='MIT',
@@ -24,6 +24,6 @@ setuptools.setup(
         ]
     },
     packages=setuptools.find_packages(),
-    python_requires=">=3.5",
-    install_requires=["pydub","ffmpeg"],
+    python_requires=">=3.7",
+    install_requires=["pydub"],
 )
