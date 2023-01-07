@@ -84,6 +84,9 @@ def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0
   # Open the audio file
   audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
 
+  # sample width (1:8bit 2:16bit)
+  sample_width = audio.sample_width
+
   # Adjust the volume (default zero adust)
   adjusted_audio = audio + volume_adjust
 
@@ -105,8 +108,12 @@ def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0
 
   for i,x in enumerate( signed_16bit_samples ):
 
-    # signed 16bit to 12bit, then encode to ADPCM
-    ( code, estimate, adjusted_index ) = encode_adpcm( x//16, last_estimate, step_index ) 
+    # signed 16bit/8bit to 12bit, then encode to ADPCM
+    if sample_width == 1:
+        xx = x * 16
+    else:
+        xx = x // 16
+    ( code, estimate, adjusted_index ) = encode_adpcm( xx, last_estimate, step_index ) 
 
     # fill a byte in this order: lower 4 bit -> upper 4 bit
     if ( i % 2 == 0 ):
