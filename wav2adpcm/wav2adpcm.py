@@ -79,7 +79,7 @@ def encode_adpcm( current_data, last_estimate, step_index ):
 
   return ( code,estimate, adjusted_index )
 
-def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0, dump=False ):
+def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0, dump=False, asm=False ):
 
   # Open the audio file
   audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
@@ -126,23 +126,44 @@ def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0
 
   if dump:
 
-    with open( adpcm_file, 'w' ) as af:
-    
-      af.write(f"/* ADPCM data (length = {len(adpcm_data)}) */\n")
-      af.write("unsigned char adpcm_data[] = {\n")
+    if asm:
+      with open( adpcm_file, 'w' ) as af:
+        
+        af.write(f"; ADPCM data (length = {len(adpcm_data)})\n")
+        af.write(".align 2\n")
+        af.write(".globl _adpcm_data:\n")
+        af.write(".data\n")
+        af.write("_adpcm_data:\n")
 
-      cols = []
-      for i,b in enumerate( adpcm_data ):
-        cols.append( "0x" + format(adpcm_data[i],'02x'))
-        if ( i % 16 ) == 15:
+        cols = []
+        for i,b in enumerate( adpcm_data ):
+          cols.append( "$" + format(adpcm_data[i],'02x'))
+          if ( i % 16 ) == 15:
+            af.write("  .dc.b " + ",".join(cols) + "\n")
+            cols = []
+
+        if len(cols) > 0:
+          af.write("  .dc.b " + ",".join(cols) + "\n")
+          cols = []    
+
+    else:
+      with open( adpcm_file, 'w' ) as af:
+        
+        af.write(f"/* ADPCM data (length = {len(adpcm_data)}) */\n")
+        af.write("unsigned char adpcm_data[] = {\n")
+
+        cols = []
+        for i,b in enumerate( adpcm_data ):
+          cols.append( "0x" + format(adpcm_data[i],'02x'))
+          if ( i % 16 ) == 15:
+            af.write("    " + ",".join(cols) + ",\n")
+            cols = []
+
+        if len(cols) > 0:
           af.write("    " + ",".join(cols) + ",\n")
-          cols = []
+          cols = []    
 
-      if len(cols) > 0:
-        af.write("    " + ",".join(cols) + ",\n")
-        cols = []    
-
-      af.write("};\n")
+        af.write("};\n")
 
   else:
     with open( adpcm_file, 'wb' ) as af:
@@ -156,11 +177,11 @@ def main():
   parser.add_argument("-f","--filter",help="1:apply low-pass filter (default:1)",type=int,default=1,choices=[0,1])
   parser.add_argument("-v","--volume",help="adjust volume in dB (default:0)",type=int,default=0)
   parser.add_argument("-d","--dump",help="output data in C source format",action='store_true',default=False)
-
+  parser.add_argument("-a","--asm",help="use assembler instead of C for dump",action='store_true',default=False)
   args = parser.parse_args()
 
   # execute conversion in script mode
-  convert_wave_to_adpcm( args.infile, args.outfile, args.filter, args.volume, args.dump )
+  convert_wave_to_adpcm( args.infile, args.outfile, args.filter, args.volume, args.dump, args.asm )
 
 
 if __name__ == "__main__":
