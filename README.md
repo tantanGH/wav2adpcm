@@ -16,7 +16,10 @@ Output ADPCM format is 15.6kHz mono (fixed).
     options:
         -f[0 or 1] ... 1:apply low-pass filter (default:1)
         -v[dB]     ... volume adjust in dB (default:0)
+        -t[sec]    ... trim at specific secoonds
+        -e         ... fade out at the end
         -d         ... dump mode (C source code generation)
+        -a         ... use assembler code for dump mode
 
 Note that you need to add wav2adpcm installed folder to your PATH environment variable.
 
