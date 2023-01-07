@@ -5,11 +5,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="wav2adpcm",
-    version="0.0.4",
+    version="0.0.5",
     author="tantanGH",
     author_email="tantanGH@github",
     license='MIT',
-    description="WAVE format file to X68000 ADPCM file converter",
+    description="WAVE format to X680x0 ADPCM format converter",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/tantanGH/wav2adpcm",

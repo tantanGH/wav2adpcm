@@ -16,119 +16,145 @@ step_size = [  16,  17,  19,  21,  23,  25,  28,  31,  34,  37,  41,  45,   50, 
                73,  80,  88,  97, 107, 118, 130, 143, 157, 173, 190, 209,  230,  253,  279,  307,
               337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552 ]
 
-def decode_adpcm(code,step_index,last_data):
+def decode_adpcm( code, step_index, last_data ):
 
-    ss = step_size[ step_index ]
+  ss = step_size[ step_index ]
 
-    delta = ( ss >> 3 )
+  delta = ( ss >> 3 )
 
-    if ( code & 0x01 ):
-        delta += ( ss >> 2 )
+  if ( code & 0x01 ):
+    delta += ( ss >> 2 )
 
-    if ( code & 0x02 ):
-        delta += ( ss >> 1 )
+  if ( code & 0x02 ):
+    delta += ( ss >> 1 )
 
-    if ( code & 0x04 ):
-        delta += ss
+  if ( code & 0x04 ):
+    delta += ss
 
-    if ( code & 0x08 ):
-        delta = -delta
+  if ( code & 0x08 ):
+    delta = -delta
     
-    estimate = last_data + delta
+  estimate = last_data + delta
 
-    if ( estimate > 2047 ):
-        estimate = 2047
+  if ( estimate > 2047 ):
+    estimate = 2047
 
-    if ( estimate < -2048 ):
-        estimate = -2048
+  if ( estimate < -2048 ):
+    estimate = -2048
 
-    step_index += step_adjust[ code ]
+  step_index += step_adjust[ code ]
 
-    if ( step_index < 0 ):
-        step_index = 0
+  if ( step_index < 0 ):
+    step_index = 0
 
-    if ( step_index > 48 ):
-        step_index = 48
+  if ( step_index > 48 ):
+    step_index = 48
 
-    return ( estimate, step_index )
+  return ( estimate, step_index )
 
 def encode_adpcm( current_data, last_estimate, step_index ):
 
-    ss = step_size[ step_index ]
+  ss = step_size[ step_index ]
 
-    delta = current_data - last_estimate
+  delta = current_data - last_estimate
 
-    code = 0x00
-    if ( delta < 0 ):
-        code = 0x08         # bit3 = 1
-        delta = -delta
+  code = 0x00
+  if ( delta < 0 ):
+    code = 0x08         # bit3 = 1
+    delta = -delta
 
-    if ( delta >= ss ):
-        code += 0x04        # bit2 = 1
-        delta -= ss
+  if ( delta >= ss ):
+    code += 0x04        # bit2 = 1
+    delta -= ss
 
-    if ( delta >= (ss>>1) ):
-        code += 0x02        # bit1 = 1
-        delta -= ss>>1
+  if ( delta >= (ss>>1) ):
+    code += 0x02        # bit1 = 1
+    delta -= ss>>1
 
-    if ( delta >= (ss>>2) ):
-        code += 0x01        # bit0 = 1
+  if ( delta >= (ss>>2) ):
+    code += 0x01        # bit0 = 1
     
-    # need to use decoder to estimate
-    ( estimate, adjusted_index ) = decode_adpcm( code, step_index, last_estimate )
+  # need to use decoder to estimate
+  ( estimate, adjusted_index ) = decode_adpcm( code, step_index, last_estimate )
 
-    return ( code,estimate, adjusted_index )
+  return ( code,estimate, adjusted_index )
 
-def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0 ):
+def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0, dump=False ):
 
-    # Open the audio file
-    audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
+  # Open the audio file
+  audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
 
-    # Adjust the volume (default zero adust)
-    adjusted_audio = audio + volume_adjust
+  # Adjust the volume (default zero adust)
+  adjusted_audio = audio + volume_adjust
 
-    # Apply a low-pass filter at 18kHz (option, but default)
-    filtered_audio = adjusted_audio.low_pass_filter( 18000 ) if filter_flag != 0 else adjusted_audio
+  # Apply a low-pass filter at 18kHz (option, but default)
+  filtered_audio = adjusted_audio.low_pass_filter( 18000 ) if filter_flag != 0 else adjusted_audio
 
-    # to mono
-    mono_audio = filtered_audio.set_channels( 1 )
+  # to mono
+  mono_audio = filtered_audio.set_channels( 1 )
 
-    # to 15.6kHz
-    rated_audio = mono_audio.set_frame_rate( 15625 )
+  # to 15.6kHz
+  rated_audio = mono_audio.set_frame_rate( 15625 )
 
-    # source data samples (still 16bit)
-    signed_16bit_samples = rated_audio.get_array_of_samples()
+  # source data samples (still 16bit)
+  signed_16bit_samples = rated_audio.get_array_of_samples()
 
-    last_estimate = 0
-    step_index = 0
-    adpcm_data = []
+  last_estimate = 0
+  step_index = 0
+  adpcm_data = []
 
-    for i,x in enumerate( signed_16bit_samples ):
+  for i,x in enumerate( signed_16bit_samples ):
 
-        # signed 16bit to 12bit, then encode to ADPCM
-        ( code, estimate, adjusted_index ) = encode_adpcm( x//16, last_estimate, step_index ) 
+    # signed 16bit to 12bit, then encode to ADPCM
+    ( code, estimate, adjusted_index ) = encode_adpcm( x//16, last_estimate, step_index ) 
 
-        # fill a byte in this order: lower 4 bit -> upper 4 bit
-        if ( i % 2 == 0 ):
-            adpcm_data.append( code )
-        else:
-            adpcm_data[-1] |= code << 4
+    # fill a byte in this order: lower 4 bit -> upper 4 bit
+    if ( i % 2 == 0 ):
+      adpcm_data.append( code )
+    else:
+      adpcm_data[-1] |= code << 4
 
-        last_estimate = estimate
-        step_index = adjusted_index
+    last_estimate = estimate
+    step_index = adjusted_index
 
+  if dump:
+
+    with open( adpcm_file, 'w' ) as af:
+    
+      af.write(f"/* ADPCM data (length = {len(adpcm_data)}) */\n")
+      af.write("unsigned char adpcm_data[] = {\n")
+
+      cols = []
+      for i,b in enumerate( adpcm_data ):
+        cols.append( "0x" + format(adpcm_data[i],'02x'))
+        if ( i % 16 ) == 15:
+          af.write("    " + ",".join(cols) + ",\n")
+          cols = []
+
+      if len(cols) > 0:
+        af.write("    " + ",".join(cols) + ",\n")
+        cols = []    
+
+      af.write("};\n")
+
+  else:
     with open( adpcm_file, 'wb' ) as af:
-        af.write( bytes( adpcm_data ))
+      af.write( bytes( adpcm_data ))
 
 def main():
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("infile",help="input WAVE file")
-    parser.add_argument("outfile",help="output ADPCM file")
-    parser.add_argument("-f","--filter",help="1:apply low-pass filter (default:1)",type=int,default=1,choices=[0,1])
-    parser.add_argument("-v","--volume",help="adjust volume in dB (default:0)",type=int,default=0)
+  parser = argparse.ArgumentParser()
+  parser.add_argument("infile",help="input WAVE file")
+  parser.add_argument("outfile",help="output ADPCM file")
+  parser.add_argument("-f","--filter",help="1:apply low-pass filter (default:1)",type=int,default=1,choices=[0,1])
+  parser.add_argument("-v","--volume",help="adjust volume in dB (default:0)",type=int,default=0)
+  parser.add_argument("-d","--dump",help="output data in C source format",action='store_true',default=False)
 
-    args = parser.parse_args()
+  args = parser.parse_args()
 
-    # execute conversion in script mode
-    convert_wave_to_adpcm( args.infile, args.outfile, args.filter, args.volume )
+  # execute conversion in script mode
+  convert_wave_to_adpcm( args.infile, args.outfile, args.filter, args.volume, args.dump )
+
+
+if __name__ == "__main__":
+    main()
