@@ -79,7 +79,7 @@ def encode_adpcm( current_data, last_estimate, step_index ):
 
   return ( code,estimate, adjusted_index )
 
-def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0, dump=False, asm=False ):
+def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume=0, trim=0, fadeout=False, dump=False, asm=False ):
 
   # Open the audio file
   audio = AudioSegment.from_file( wave_file, format='wav', warn=False )
@@ -87,11 +87,17 @@ def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0
   # sample width (1:8bit 2:16bit)
   sample_width = audio.sample_width
 
+  # trim
+  trim_audio = audio[:trim * 1000] if trim > 0 else audio
+
   # Adjust the volume (default zero adust)
-  adjusted_audio = audio + volume_adjust
+  volume_audio = trim_audio + volume
+
+  # fadeout?
+  fade_audio = volume_audio.fade_out(1000) if fadeout else volume_audio
 
   # Apply a low-pass filter at 18kHz (option, but default)
-  filtered_audio = adjusted_audio.low_pass_filter( 18000 ) if filter_flag != 0 else adjusted_audio
+  filtered_audio = fade_audio.low_pass_filter( 18000 ) if filter_flag != 0 else fade_audio
 
   # to mono
   mono_audio = filtered_audio.set_channels( 1 )
@@ -99,14 +105,14 @@ def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0
   # to 15.6kHz
   rated_audio = mono_audio.set_frame_rate( 15625 )
 
-  # source data samples (still 16bit)
-  signed_16bit_samples = rated_audio.get_array_of_samples()
+  # source data samples (still 16bit/8bit)
+  signed_samples = rated_audio.get_array_of_samples()
 
   last_estimate = 0
   step_index = 0
   adpcm_data = []
 
-  for i,x in enumerate( signed_16bit_samples ):
+  for i,x in enumerate( signed_samples ):
 
     # signed 16bit/8bit to 12bit, then encode to ADPCM
     if sample_width == 1:
@@ -176,12 +182,14 @@ def main():
   parser.add_argument("outfile",help="output ADPCM file")
   parser.add_argument("-f","--filter",help="1:apply low-pass filter (default:1)",type=int,default=1,choices=[0,1])
   parser.add_argument("-v","--volume",help="adjust volume in dB (default:0)",type=int,default=0)
+  parser.add_argument("-t","--trim",help="trim at the specific second (default:None)",type=int,default=0)
+  parser.add_argument("-e","--fadeout",help="fade out at the end",action='store_true',default=None)
   parser.add_argument("-d","--dump",help="output data in C source format",action='store_true',default=False)
   parser.add_argument("-a","--asm",help="use assembler instead of C for dump",action='store_true',default=False)
   args = parser.parse_args()
 
   # execute conversion in script mode
-  convert_wave_to_adpcm( args.infile, args.outfile, args.filter, args.volume, args.dump, args.asm )
+  convert_wave_to_adpcm( args.infile, args.outfile, args.filter, args.volume, args.trim, args.fadeout, args.dump, args.asm )
 
 
 if __name__ == "__main__":
