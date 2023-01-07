@@ -129,9 +129,9 @@ def convert_wave_to_adpcm( wave_file, adpcm_file, filter_flag=1, volume_adjust=0
     if asm:
       with open( adpcm_file, 'w' ) as af:
         
-        af.write(f"; ADPCM data (length = {len(adpcm_data)})\n")
+        af.write(f"\n; ADPCM data (length = {len(adpcm_data)})\n")
         af.write(".align 2\n")
-        af.write(".globl _adpcm_data:\n")
+        af.write(".globl _adpcm_data\n")
         af.write(".data\n")
         af.write("_adpcm_data:\n")
 
